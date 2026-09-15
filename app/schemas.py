@@ -14,6 +14,7 @@ class FormatoMandrinoOut(BaseModel):
     codice: str
     diametro_testa: float | None
     conicita: float | None
+    attivo: bool
 
 
 class FormatoMandrinoPatchIn(BaseModel):
@@ -23,6 +24,7 @@ class FormatoMandrinoPatchIn(BaseModel):
     che lo cita per nome."""
     diametro_testa: float | None = None
     conicita: float | None = None
+    attivo: bool | None = None
 
 
 class MaterialeParteOut(BaseModel):
@@ -33,8 +35,8 @@ class MaterialeParteOut(BaseModel):
     spessore_my: float | None
     peso_specifico: float | None
     massa_per_superficie: float | None
-    prezzo_e_kg: float | None
     fascia_fissa_mm: float | None
+    attivo: bool
 
 
 class MaterialeParetePatchIn(BaseModel):
@@ -42,8 +44,8 @@ class MaterialeParetePatchIn(BaseModel):
     spessore_my: float | None = None
     peso_specifico: float | None = None
     massa_per_superficie: float | None = None
-    prezzo_e_kg: float | None = None
     fascia_fissa_mm: float | None = None
+    attivo: bool | None = None
 
 
 class MaterialeDiscoOut(BaseModel):
@@ -63,10 +65,12 @@ class VarianteColoreOut(BaseModel):
     nome: str
     gruppo: str
     densita_g_m2: float | None
+    attivo: bool
 
 
 class VarianteColorePatchIn(BaseModel):
     densita_g_m2: float | None = None
+    attivo: bool | None = None
 
 
 class VarianteColoreNomeOut(BaseModel):
@@ -84,10 +88,12 @@ class FasciaDisponibileOut(BaseModel):
     tipo: str
     ordine: int
     larghezza_mm: float | None
+    attivo: bool
 
 
 class FasciaDisponibilePatchIn(BaseModel):
     larghezza_mm: float | None = None
+    attivo: bool | None = None
 
 
 class CostantiTipoCapsulaOut(BaseModel):

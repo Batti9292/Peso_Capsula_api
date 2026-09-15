@@ -36,11 +36,15 @@ def calcola_peso(dati: CalcoloIn, db: Session = Depends(get_db), _u: TokenPayloa
     if dati.tipo not in TIPI_CAPSULA:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f'Tipo capsula sconosciuto: "{dati.tipo}".')
 
-    formato = db.query(FormatoMandrino).filter(FormatoMandrino.codice == dati.formato_codice).first()
+    # `attivo == False` conta come "non trovato" qui: una riga disattivata
+    # sparisce dalla tendina del configuratore (vedi riferimenti.py), quindi
+    # non deve restare comunque utilizzabile chiamando /calcola direttamente
+    # col suo nome/codice.
+    formato = db.query(FormatoMandrino).filter(FormatoMandrino.codice == dati.formato_codice, FormatoMandrino.attivo == True).first()  # noqa: E712
     if formato is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f'Formato "{dati.formato_codice}" non trovato.')
 
-    materiale_parete = db.query(MaterialeParete).filter(MaterialeParete.nome == dati.materiale_parete_nome).first()
+    materiale_parete = db.query(MaterialeParete).filter(MaterialeParete.nome == dati.materiale_parete_nome, MaterialeParete.attivo == True).first()  # noqa: E712
     if materiale_parete is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f'Materiale parete "{dati.materiale_parete_nome}" non trovato.')
 
@@ -50,7 +54,7 @@ def calcola_peso(dati: CalcoloIn, db: Session = Depends(get_db), _u: TokenPayloa
 
     densita_colore = 0.0
     if dati.colore_nome is not None:
-        colore = db.query(VarianteColore).filter(VarianteColore.nome == dati.colore_nome).first()
+        colore = db.query(VarianteColore).filter(VarianteColore.nome == dati.colore_nome, VarianteColore.attivo == True).first()  # noqa: E712
         if colore is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, f'Colore "{dati.colore_nome}" non trovato.')
         densita_colore = colore.densita_g_m2 or 0.0
@@ -64,7 +68,7 @@ def calcola_peso(dati: CalcoloIn, db: Session = Depends(get_db), _u: TokenPayloa
     if costanti_disco is None:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f'Costanti disco mancanti per il tipo "{tipo_disco_riferimento}" (dato di seed, non dovrebbe succedere).')
 
-    fasce = db.query(FasciaDisponibile).filter(FasciaDisponibile.tipo == dati.tipo).order_by(FasciaDisponibile.ordine).all()
+    fasce = db.query(FasciaDisponibile).filter(FasciaDisponibile.tipo == dati.tipo, FasciaDisponibile.attivo == True).order_by(FasciaDisponibile.ordine).all()  # noqa: E712
     fasce_mm = tuple(f.larghezza_mm for f in fasce if f.larghezza_mm is not None)
 
     ingresso = calcolo.InputCalcolo(

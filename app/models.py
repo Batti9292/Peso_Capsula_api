@@ -38,13 +38,19 @@ class FormatoMandrino(Base):
     codice: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     diametro_testa: Mapped[float | None] = mapped_column(Float, nullable=True)
     conicita: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Marco, 15 settembre 2026: un formato non ancora/non più in uso si
+    # disattiva invece di cancellarlo (mai una riga tolta, vedi il
+    # commento in cima al file) — sparisce dalla tendina del
+    # configuratore ma resta qui coi suoi valori.
+    attivo: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
 
 
 class MaterialeParete(Base):
     """Foglio "dati parete" — un materiale di supporto (es. "COMFORT –
     12/40/12"). `massa_per_superficie` è l'unico valore che entra nel
-    peso della capsula. `prezzo_e_kg` è solo informativo: non entra in
-    nessuna formula di peso trovata nel foglio.
+    peso della capsula (il prezzo del foglio originale era solo
+    informativo, mai usato in nessuna formula — tolto su richiesta di
+    Marco, 15 settembre 2026).
 
     `fascia_fissa_mm`, se impostata, SOSTITUISCE del tutto la normale
     tabella delle larghezze disponibili (vedi FasciaDisponibile) per
@@ -60,8 +66,8 @@ class MaterialeParete(Base):
     spessore_my: Mapped[float | None] = mapped_column(Float, nullable=True)
     peso_specifico: Mapped[float | None] = mapped_column(Float, nullable=True)  # g/cm3
     massa_per_superficie: Mapped[float | None] = mapped_column(Float, nullable=True)  # kg/m2
-    prezzo_e_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
     fascia_fissa_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    attivo: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
 
 
 class FasciaDisponibile(Base):
@@ -79,6 +85,7 @@ class FasciaDisponibile(Base):
     tipo: Mapped[str] = mapped_column(String(20), index=True)  # uno di TIPI_CAPSULA
     ordine: Mapped[int] = mapped_column(Integer, default=0)
     larghezza_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    attivo: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
 
 
 class MaterialeDisco(Base):
@@ -106,6 +113,7 @@ class VarianteColore(Base):
     nome: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     gruppo: Mapped[str] = mapped_column(String(20), default="pvc")  # "pvc" o "alluminio"
     densita_g_m2: Mapped[float | None] = mapped_column(Float, nullable=True)
+    attivo: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
 
 
 class CostantiTipoCapsula(Base):

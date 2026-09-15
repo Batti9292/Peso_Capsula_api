@@ -129,3 +129,60 @@ def test_calcola_pet_usa_il_diametro_disco_di_pvc(client, token_utente, db):
     assert r.status_code == 200
     area_attesa_con_28 = 3.14159265358979 * (28.0 / 2) ** 2
     assert abs(r.json()["area_disco_mm2"] - area_attesa_con_28) < 0.01
+
+
+# ---------------------------------------------------------------------
+# attivo — una riga disattivata si comporta come "non trovata" per il
+# calcolo, esattamente come e' gia' sparita dalla tendina (Marco, 15
+# settembre 2026)
+# ---------------------------------------------------------------------
+
+def test_calcola_con_formato_disattivato_404(client, token_utente, token_admin, db):
+    _prepara_capsuloni_completo(db)
+    formato = db.query(FormatoMandrino).filter(FormatoMandrino.codice == "C-Ø34-1:8").first()
+    formato.attivo = False
+    db.commit()
+    r = client.post("/calcola", json=_base_in(), headers=token_utente)
+    assert r.status_code == 404
+
+
+def test_calcola_con_materiale_parete_disattivato_404(client, token_utente, db):
+    _prepara_capsuloni_completo(db)
+    materiale = db.query(MaterialeParete).filter(MaterialeParete.nome == "COMFORT").first()
+    materiale.attivo = False
+    db.commit()
+    r = client.post("/calcola", json=_base_in(), headers=token_utente)
+    assert r.status_code == 404
+
+
+def test_calcola_con_colore_disattivato_404(client, token_utente, db):
+    _prepara_capsuloni_completo(db)
+    colore = db.query(VarianteColore).filter(VarianteColore.nome == "oro per (All)").first()
+    colore.attivo = False
+    db.commit()
+    r = client.post("/calcola", json=_base_in(colore_nome="oro per (All)"), headers=token_utente)
+    assert r.status_code == 404
+
+
+def test_calcola_ignora_le_fasce_disattivate(client, token_utente, db):
+    """Una fascia disattivata non deve più contare come opzione: se era
+    la più stretta fra quelle abbastanza larghe, il calcolo deve
+    ripiegare sulla prossima disponibile."""
+    _prepara_capsuloni_completo(db)
+    # La geometria di _prepara_capsuloni_completo dà una fascia ottimale
+    # ben oltre le larghezze 30-50 già seminate lì (sempre "ripiego alla
+    # fascia ottimale" — non eserciterebbe la scelta fra fasce). Fasce
+    # dedicate qui, scelte apposta attorno al valore vero calcolato.
+    ottimale = client.post("/calcola", json=_base_in(), headers=token_utente).json()["fascia_ottimale_mm"]
+    piu_stretta = FasciaDisponibile(tipo="capsuloni", ordine=10, larghezza_mm=round(ottimale) + 1)
+    piu_larga = FasciaDisponibile(tipo="capsuloni", ordine=11, larghezza_mm=round(ottimale) + 10)
+    db.add_all([piu_stretta, piu_larga])
+    db.commit()
+
+    prima = client.post("/calcola", json=_base_in(), headers=token_utente).json()
+    assert prima["fascia_materiale_utilizzata_mm"] == piu_stretta.larghezza_mm
+
+    piu_stretta.attivo = False
+    db.commit()
+    dopo = client.post("/calcola", json=_base_in(), headers=token_utente).json()
+    assert dopo["fascia_materiale_utilizzata_mm"] == piu_larga.larghezza_mm

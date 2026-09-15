@@ -92,15 +92,41 @@ _crud_sola_modifica("/costanti-disco-tipo", CostantiDiscoTipo, CostantiDiscoTipo
 # accesso all'app, senza bisogno del permesso di dettaglio. ----
 
 
+# Mappa tipo capsula -> lettera di "gruppo" dei formati mandrino
+# compatibili (Marco, 15 settembre 2026: "C" capsuloni, "F" futura, "P"
+# pet/pvc). "M" è Magnum — un tipo non ancora supportato dal
+# configuratore — e resta SEMPRE disattivato via `attivo` (Marco lo
+# disattiva a mano insieme alle righe senza lettera): non è escluso
+# qui apposta, per non filtrarlo due volte — se un giorno viene
+# riattivato deve comparire comunque in OGNI tipo ("se attivate falle
+# vedere sempre"), non restare invisibile perché la sua lettera non
+# combacia con nessun tipo. "convex" non ha ancora una lettera
+# assegnata (da confermare con Marco): finché manca in questa mappa,
+# nomi_formati(tipo="convex") torna tutti i formati attivi, non filtrati.
+GRUPPO_PER_TIPO: dict[str, str] = {
+    "capsuloni": "C",
+    "futura": "F",
+    "pvc": "P",
+    "pet": "P",
+}
+# Le uniche lettere che restringono davvero la tendina — un gruppo
+# vuoto o una lettera diversa (es. "M") non viene escluso dal filtro,
+# vedi il commento sopra.
+_GRUPPI_FILTRATI = set(GRUPPO_PER_TIPO.values())
+
+
 @router.get("/formati-mandrino/nomi", response_model=list[str])
-def nomi_formati(db: Session = Depends(get_db), _u: TokenPayload = Depends(_richiede_accesso)):
-    righe = db.query(FormatoMandrino.codice).order_by(FormatoMandrino.codice).all()
-    return [r[0] for r in righe]
+def nomi_formati(tipo: str | None = None, db: Session = Depends(get_db), _u: TokenPayload = Depends(_richiede_accesso)):
+    righe = db.query(FormatoMandrino).filter(FormatoMandrino.attivo == True).order_by(FormatoMandrino.codice).all()  # noqa: E712
+    gruppo_atteso = GRUPPO_PER_TIPO.get(tipo) if tipo else None
+    if gruppo_atteso is None:
+        return [r.codice for r in righe]
+    return [r.codice for r in righe if r.gruppo == gruppo_atteso or r.gruppo not in _GRUPPI_FILTRATI]
 
 
 @router.get("/materiali-parete/nomi", response_model=list[str])
 def nomi_materiali_parete(db: Session = Depends(get_db), _u: TokenPayload = Depends(_richiede_accesso)):
-    righe = db.query(MaterialeParete.nome).order_by(MaterialeParete.nome).all()
+    righe = db.query(MaterialeParete.nome).filter(MaterialeParete.attivo == True).order_by(MaterialeParete.nome).all()  # noqa: E712
     return [r[0] for r in righe]
 
 
@@ -112,5 +138,5 @@ def nomi_materiali_disco(db: Session = Depends(get_db), _u: TokenPayload = Depen
 
 @router.get("/varianti-colore/nomi", response_model=list[VarianteColoreNomeOut])
 def nomi_varianti_colore(db: Session = Depends(get_db), _u: TokenPayload = Depends(_richiede_accesso)):
-    return db.query(VarianteColore).order_by(VarianteColore.gruppo, VarianteColore.nome).all()
+    return db.query(VarianteColore).filter(VarianteColore.attivo == True).order_by(VarianteColore.gruppo, VarianteColore.nome).all()  # noqa: E712
 
