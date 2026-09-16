@@ -168,6 +168,18 @@ def test_riga_disattivata_sparisce_dai_nomi(client, token_admin, token_utente, d
     assert client.get("/formati-mandrino/nomi", headers=token_utente).json() == []
 
 
+# ---------------------------------------------------------------------
+# my_alu — Batti9292/Peso_Capsula_api#7, punto 3 (foglio "dati parete"
+# colonna H, spessore del solo alluminio)
+# ---------------------------------------------------------------------
+
+def test_my_alu_e_modificabile_via_patch(client, token_admin, db):
+    riga = _crea_materiale(db)
+    r = client.patch(f"/materiali-parete/{riga.id}", json={"my_alu": 9.0}, headers=token_admin)
+    assert r.status_code == 200
+    assert r.json()["my_alu"] == 9.0
+
+
 def test_riga_disattivata_resta_nellelenco_completo(client, token_admin, db):
     """Disattivare non e' cancellare: chi ha il permesso di dettaglio
     continua a vederla e a poterla riattivare."""

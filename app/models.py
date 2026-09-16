@@ -64,6 +64,13 @@ class MaterialeParete(Base):
     nome: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     codice_commerciale: Mapped[str] = mapped_column(String(20), default="")
     spessore_my: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Foglio "dati parete" colonna H — Batti9292/Peso_Capsula_api#7,
+    # punto 3: lo spessore del SOLO alluminio dentro il polilaminato
+    # (diverso da `spessore_my`, che è lo spessore totale del
+    # materiale). Non ancora usato da calcolo.py: serve al blocco
+    # "impiego/ordine" descritto nella stessa issue, non ancora
+    # implementato — il campo per raccoglierlo fin da subito c'è.
+    my_alu: Mapped[float | None] = mapped_column(Float, nullable=True)
     peso_specifico: Mapped[float | None] = mapped_column(Float, nullable=True)  # g/cm3
     massa_per_superficie: Mapped[float | None] = mapped_column(Float, nullable=True)  # kg/m2
     fascia_fissa_mm: Mapped[float | None] = mapped_column(Float, nullable=True)

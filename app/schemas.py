@@ -33,6 +33,7 @@ class MaterialeParteOut(BaseModel):
     nome: str
     codice_commerciale: str
     spessore_my: float | None
+    my_alu: float | None
     peso_specifico: float | None
     massa_per_superficie: float | None
     fascia_fissa_mm: float | None
@@ -42,6 +43,7 @@ class MaterialeParteOut(BaseModel):
 class MaterialeParetePatchIn(BaseModel):
     codice_commerciale: str | None = None
     spessore_my: float | None = None
+    my_alu: float | None = None
     peso_specifico: float | None = None
     massa_per_superficie: float | None = None
     fascia_fissa_mm: float | None = None
