@@ -63,7 +63,14 @@ def risolvi_e_calcola(db: Session, dati: CalcoloIn) -> calcolo.RisultatoCalcolo:
         colore = db.query(VarianteColore).filter(VarianteColore.nome == dati.colore_nome, VarianteColore.attivo == True).first()  # noqa: E712
         if colore is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, f'Colore "{dati.colore_nome}" non trovato.')
-        densita_colore = colore.densita_g_m2 or 0.0
+        # Peso_Capsula_api#6 (commento di Marco/Opus): "colore.densita_g_m2
+        # or 0.0" faceva passare in silenzio un colore la cui densità
+        # non è ancora stata compilata — il peso usciva più basso del
+        # vero, senza nessun avviso (il caso "sbagliato dell'8% ma
+        # dall'aria normalissima" descritto nell'issue). Coerente con
+        # gli altri otto numeri obbligatori: _numero_o_400, non un
+        # ripiego silenzioso.
+        densita_colore = _numero_o_400(colore.densita_g_m2, f'La densità del colore "{colore.nome}"')
 
     costanti = db.query(CostantiTipoCapsula).filter(CostantiTipoCapsula.tipo == dati.tipo).first()
     if costanti is None:

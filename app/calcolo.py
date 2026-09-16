@@ -145,6 +145,15 @@ def fascia_materiale_utilizzata(fascia_ottimale_mm: float, fasce_disponibili_mm:
 
 
 def calcola(dati: InputCalcolo) -> RisultatoCalcolo:
+    # Peso_Capsula_api#6: conicita_1a=0 spacca il servizio con una
+    # ZeroDivisionError (entra nel denominatore due righe più sotto).
+    # Gli schemi di PATCH ora rifiutano gt=0 in scrittura, ma questo
+    # controllo resta qui perché è l'ultima difesa contro un valore
+    # già sbagliato in tabella da prima della correzione — un
+    # ValueError pulito (400), mai un errore Python che esplode.
+    if dati.conicita_1a <= 0:
+        raise ValueError('La conicità del formato deve essere maggiore di zero.')
+
     if dati.tipo in TIPI_CON_SORMONTO_DISCO_MANUALE:
         if dati.sormonto_disco_manuale is None:
             raise ValueError(f'"{dati.tipo}" richiede sormonto_disco_manuale.')
@@ -200,6 +209,19 @@ def calcola(dati: InputCalcolo) -> RisultatoCalcolo:
     peso_linguetta = dati.peso_linguetta_g if (dati.ha_linguetta and dati.linguetta_scelta) else 0.0
 
     peso_capsula = peso_foglia_parete + peso_disco + peso_colore + peso_linguetta
+
+    # Peso_Capsula_api#6, "in uscita": anche con ogni singolo campo
+    # positivo (gt=0 sugli schemi di PATCH), una combinazione
+    # geometricamente incoerente puo' ancora produrre un'area — quindi
+    # un peso — negativa (es. un raggio foglia piu' piccolo del passo).
+    # Un peso capsula che non e' maggiore di zero non e' "un risultato
+    # strano da controllare": e' la prova che i dati di riferimento
+    # sono sbagliati, e non deve mai arrivare a chi fa il preventivo.
+    if peso_foglia_parete <= 0 or peso_disco <= 0 or peso_capsula <= 0:
+        raise ValueError(
+            "Il calcolo ha prodotto un peso non valido (zero o negativo): "
+            "controlla i valori nelle tabelle di riferimento per questo formato/tipo/materiale."
+        )
 
     return RisultatoCalcolo(
         conicita_gradi=conicita_gradi,

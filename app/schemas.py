@@ -4,7 +4,7 @@ solo un Out e un PatchIn — MAI un CreaIn o un'eliminazione esposta
 all'API: "nessuna riga aggiungibile o togliibile" (Marco, 15 settembre
 2026), le righe nascono da un seed/migrazione, non da una POST."""
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .fuso_orario import OrarioUTC
 
@@ -23,9 +23,14 @@ class FormatoMandrinoPatchIn(BaseModel):
     """Tutti opzionali — PATCH scrive solo i campi inviati. `codice` è
     escluso di proposito: è la chiave con cui il configuratore sceglie
     il formato, cambiarla romperebbe qualunque richiesta già salvata
-    che lo cita per nome."""
-    diametro_testa: float | None = None
-    conicita: float | None = None
+    che lo cita per nome.
+
+    Peso_Capsula_api#6: `gt=0` su diametro e conicità — un valore a
+    zero o negativo qui produce un peso capsula assurdo (negativo, o
+    per `conicita=0` una divisione per zero che rompe il servizio),
+    riprodotto eseguendo il motore di calcolo vero."""
+    diametro_testa: float | None = Field(None, gt=0)
+    conicita: float | None = Field(None, gt=0)
     attivo: bool | None = None
 
 
@@ -43,12 +48,17 @@ class MaterialeParteOut(BaseModel):
 
 
 class MaterialeParetePatchIn(BaseModel):
+    """Peso_Capsula_api#6: `gt=0` sui campi fisici — uno spessore, una
+    densità o una massa per superficie negativa o a zero non hanno
+    senso fisico e producono un peso capsula sbagliato senza nessun
+    errore (misurato: -0,5070 g invece di 0,6964 g con
+    `massa_per_superficie` negativa)."""
     codice_commerciale: str | None = None
-    spessore_my: float | None = None
-    my_alu: float | None = None
-    peso_specifico: float | None = None
-    massa_per_superficie: float | None = None
-    fascia_fissa_mm: float | None = None
+    spessore_my: float | None = Field(None, gt=0)
+    my_alu: float | None = Field(None, gt=0)
+    peso_specifico: float | None = Field(None, gt=0)
+    massa_per_superficie: float | None = Field(None, gt=0)
+    fascia_fissa_mm: float | None = Field(None, gt=0)
     attivo: bool | None = None
 
 
@@ -60,7 +70,7 @@ class MaterialeDiscoOut(BaseModel):
 
 
 class MaterialeDiscoPatchIn(BaseModel):
-    massa_per_superficie: float | None = None
+    massa_per_superficie: float | None = Field(None, gt=0)
 
 
 class VarianteColoreOut(BaseModel):
@@ -73,7 +83,7 @@ class VarianteColoreOut(BaseModel):
 
 
 class VarianteColorePatchIn(BaseModel):
-    densita_g_m2: float | None = None
+    densita_g_m2: float | None = Field(None, gt=0)
     attivo: bool | None = None
 
 
@@ -96,7 +106,7 @@ class FasciaDisponibileOut(BaseModel):
 
 
 class FasciaDisponibilePatchIn(BaseModel):
-    larghezza_mm: float | None = None
+    larghezza_mm: float | None = Field(None, gt=0)
     attivo: bool | None = None
 
 
@@ -117,16 +127,24 @@ class CostantiTipoCapsulaOut(BaseModel):
 
 
 class CostantiTipoCapsulaPatchIn(BaseModel):
-    altezza_testa_ht: float | None = None
-    sormonto_base_b: float | None = None
-    rifila_s: float | None = None
-    sormonto_disco_manuale: float | None = None
-    sormonto_disco_costante: float | None = None
-    sfrido_parete_convex_d: float | None = None
-    sfrido_su_lunghezza_percento: float | None = None
-    larghezza_fascia_da_dividere: float | None = None
+    """Peso_Capsula_api#6: `gt=0` sulle misure fisiche (un'altezza, un
+    sormonto, una rifila o un peso a zero/negativo non hanno senso e
+    producono un peso capsula sbagliato senza nessun errore — misurato
+    con `altezza_testa_ht`: -0,3679 g invece di 0,6964 g). Gli sfridi
+    sono percentuali che possono legittimamente essere zero (nessuno
+    scarto), quindi solo `ge=0`, mai negativi."""
+    altezza_testa_ht: float | None = Field(None, gt=0)
+    sormonto_base_b: float | None = Field(None, gt=0)
+    rifila_s: float | None = Field(None, gt=0)
+    sormonto_disco_manuale: float | None = Field(None, gt=0)
+    sormonto_disco_costante: float | None = Field(None, gt=0)
+    sfrido_parete_convex_d: float | None = Field(None, gt=0)
+    sfrido_su_lunghezza_percento: float | None = Field(None, ge=0)
+    # "N. di fasce da dividere" (operx#152/#153): un conteggio, non una
+    # misura — comunque mai zero o negativo.
+    larghezza_fascia_da_dividere: float | None = Field(None, gt=0)
     ha_linguetta: bool | None = None
-    peso_linguetta_g: float | None = None
+    peso_linguetta_g: float | None = Field(None, gt=0)
 
 
 class CostantiDiscoTipoOut(BaseModel):
@@ -141,11 +159,14 @@ class CostantiDiscoTipoOut(BaseModel):
 
 
 class CostantiDiscoTipoPatchIn(BaseModel):
-    diametro_disco_testa: float | None = None
-    fascia_stampa_utilizzata: float | None = None
-    passo: float | None = None
-    sfrido_rifile_percento: float | None = None
-    sfrido_lunghezza_percento: float | None = None
+    """Peso_Capsula_api#6: `gt=0` su diametro/fascia/passo (misurato con
+    `diametro_disco_testa`: 0,9399 g invece di 0,6964 g da negativo).
+    Gli sfridi restano `ge=0`, come in CostantiTipoCapsulaPatchIn."""
+    diametro_disco_testa: float | None = Field(None, gt=0)
+    fascia_stampa_utilizzata: float | None = Field(None, gt=0)
+    passo: float | None = Field(None, gt=0)
+    sfrido_rifile_percento: float | None = Field(None, ge=0)
+    sfrido_lunghezza_percento: float | None = Field(None, ge=0)
 
 
 # ---- Il configuratore ----
@@ -154,7 +175,11 @@ class CostantiDiscoTipoPatchIn(BaseModel):
 class CalcoloIn(BaseModel):
     tipo: str  # uno di models.TIPI_CAPSULA
     formato_codice: str
-    altezza_capsula: float
+    # Peso_Capsula_api#6: gt=0 — a zero/negativo produce un peso
+    # sbagliato senza nessun errore (misurato: -0,3679 g invece di
+    # 0,6964 g), è un valore scelto liberamente da chi compila, non
+    # letto da una tabella.
+    altezza_capsula: float = Field(..., gt=0)
     materiale_parete_nome: str
     materiale_disco_nome: str
     colore_nome: str | None = None
@@ -194,7 +219,7 @@ class RegistraCalcoloIn(BaseModel):
     salva solo il risultato che esce da lì."""
     tipo: str
     formato_codice: str
-    altezza_capsula: float
+    altezza_capsula: float = Field(..., gt=0)
     materiale_parete_nome: str
     materiale_disco_nome: str
     colore_nome: str | None = None

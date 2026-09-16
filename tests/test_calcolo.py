@@ -242,3 +242,41 @@ def test_capsuloni_somma_colore_e_linguetta_invece_di_moltiplicarli():
     # differenza fra i due totali è ESATTAMENTE il peso della linguetta.
     assert con_linguetta.peso_capsula_g - senza_linguetta.peso_capsula_g == pytest.approx(0.032128)
     assert con_linguetta.peso_colore_g == senza_linguetta.peso_colore_g
+
+
+# ---------------------------------------------------------------------
+# Peso_Capsula_api#6 — un valore impossibile dà un peso negativo, senza
+# nessun errore. Gli schemi di PATCH ora rifiutano gt=0 in scrittura
+# (vedi test_riferimenti.py), ma queste sono le difese DENTRO calcola():
+# l'ultima rete contro un valore già sbagliato in tabella da prima
+# della correzione, o arrivato per un'altra via.
+# ---------------------------------------------------------------------
+
+def test_baseline_positiva_non_solleva_niente():
+    """Da verificare al contrario: se una qualunque delle prove sotto
+    smettesse di sollevare, sarebbe perché questa baseline (tutti i
+    valori sensati) ha smesso di produrre un peso positivo."""
+    r = calcola(_dati())
+    assert r.peso_capsula_g > 0
+
+
+def test_conicita_zero_solleva_valueerror_non_zerodivisionerror():
+    """Prima della correzione: ZeroDivisionError non gestito, il
+    servizio si rompeva invece di rispondere 400."""
+    with pytest.raises(ValueError, match="conicità"):
+        calcola(_dati(conicita_1a=0.0))
+
+
+def test_diametro_testa_negativo_da_un_peso_negativo_bloccato():
+    with pytest.raises(ValueError, match="peso non valido"):
+        calcola(_dati(diametro_testa=-34.0))
+
+
+def test_altezza_capsula_negativa_da_un_peso_negativo_bloccato():
+    with pytest.raises(ValueError, match="peso non valido"):
+        calcola(_dati(altezza_capsula=-30.0))
+
+
+def test_massa_per_superficie_parete_negativa_da_un_peso_negativo_bloccato():
+    with pytest.raises(ValueError, match="peso non valido"):
+        calcola(_dati(massa_per_superficie_parete=-0.6))

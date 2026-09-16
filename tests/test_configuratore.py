@@ -90,6 +90,19 @@ def test_calcola_colore_inesistente_404(client, token_utente, db):
     assert r.status_code == 404
 
 
+def test_calcola_colore_senza_densita_400_non_peso_silenziosamente_basso(client, token_utente, db):
+    """Peso_Capsula_api#6, commento di Marco/Opus: prima della
+    correzione, `colore.densita_g_m2 or 0.0` faceva tornare un peso più
+    basso del vero invece di un errore — nessuno se ne accorgeva."""
+    _prepara_capsuloni_completo(db)
+    colore = db.query(VarianteColore).filter(VarianteColore.nome == "oro per (All)").first()
+    colore.densita_g_m2 = None
+    db.commit()
+    r = client.post("/calcola", json=_base_in(colore_nome="oro per (All)"), headers=token_utente)
+    assert r.status_code == 400
+    assert "non è ancora stato configurato" in r.json()["detail"]
+
+
 def test_calcola_tipo_sconosciuto_400(client, token_utente, db):
     _prepara_capsuloni_completo(db)
     r = client.post("/calcola", json=_base_in(tipo="non-esiste"), headers=token_utente)
