@@ -88,6 +88,18 @@ def test_nomi_formati_gruppo_magnum_o_vuoto_sempre_visibile_se_attivo(client, to
     assert sorted(r.json()) == ["M-1", "SENZA-1"]
 
 
+def test_nomi_formati_i_due_magnum_marcati_p_non_compaiono_in_pvc_o_pet(client, token_utente, db):
+    """Peso_Capsula_api#8: due mandrini Magnum marcati per errore "P"
+    nel foglio originale — nessuno li ha mai voluti nelle tendine di
+    PVC/PET. Restano invece visibili nella tendina generica (nessun
+    tipo, o un altro tipo che non li esclude)."""
+    _crea_formato(db, gruppo="P", codice="M-ø47-7,2°-h185")
+    _crea_formato(db, gruppo="P", codice="M-ø47-7,2°-h230")
+    _crea_formato(db, gruppo="P", codice="P-1")  # un vero PVC/PET, non va tolto
+    assert sorted(client.get("/formati-mandrino/nomi?tipo=pvc", headers=token_utente).json()) == ["P-1"]
+    assert sorted(client.get("/formati-mandrino/nomi?tipo=pet", headers=token_utente).json()) == ["P-1"]
+
+
 def test_nomi_formati_disattivato_resta_nascosto_anche_col_gruppo_giusto(client, token_admin, token_utente, db):
     riga = _crea_formato(db, gruppo="C", codice="C-1")
     client.patch(f"/formati-mandrino/{riga.id}", json={"attivo": False}, headers=token_admin)

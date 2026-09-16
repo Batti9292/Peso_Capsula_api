@@ -114,6 +114,15 @@ GRUPPO_PER_TIPO: dict[str, str] = {
 # vedi il commento sopra.
 _GRUPPI_FILTRATI = set(GRUPPO_PER_TIPO.values())
 
+# Peso_Capsula_api#8, parte fattibile SUBITO (il resto aspetta due
+# risposte di Marco, vedi l'issue): due mandrini Magnum, marcati per
+# errore "P" nel foglio originale (riga scivolata — il terzo mandrino
+# della stessa famiglia è marcato "M"), comparivano nelle tendine di
+# PVC e PET — lì non li ha mai voluti nessuno. Un elenco di codici
+# esatti, non una regola generale: non tocca il resto del filtro,
+# ancora "aperto" in attesa di quelle risposte.
+_CODICI_MAGNUM_DA_TOGLIERE_DA_PVC_PET = {"M-ø47-7,2°-h185", "M-ø47-7,2°-h230"}
+
 
 @router.get("/formati-mandrino/nomi", response_model=list[str])
 def nomi_formati(tipo: str | None = None, db: Session = Depends(get_db), _u: TokenPayload = Depends(_richiede_accesso)):
@@ -121,7 +130,10 @@ def nomi_formati(tipo: str | None = None, db: Session = Depends(get_db), _u: Tok
     gruppo_atteso = GRUPPO_PER_TIPO.get(tipo) if tipo else None
     if gruppo_atteso is None:
         return [r.codice for r in righe]
-    return [r.codice for r in righe if r.gruppo == gruppo_atteso or r.gruppo not in _GRUPPI_FILTRATI]
+    codici = [r.codice for r in righe if r.gruppo == gruppo_atteso or r.gruppo not in _GRUPPI_FILTRATI]
+    if tipo in ("pvc", "pet"):
+        codici = [c for c in codici if c not in _CODICI_MAGNUM_DA_TOGLIERE_DA_PVC_PET]
+    return codici
 
 
 @router.get("/materiali-parete/nomi", response_model=list[str])
