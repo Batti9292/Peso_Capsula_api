@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from .config import CORS_ORIGINS
 from .database import verifica_database_pronto
 from .errori import interpreta_violazione
-from .routers import configuratore, riferimenti
+from .routers import configuratore, riferimenti, storico
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,7 @@ def _errore_imprevisto(richiesta: Request, errore: Exception) -> JSONResponse:
 
 app.include_router(riferimenti.router)
 app.include_router(configuratore.router)
+app.include_router(storico.router)
 
 
 @app.get("/")

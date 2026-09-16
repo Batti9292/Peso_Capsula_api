@@ -31,8 +31,14 @@ def _numero_o_400(valore: float | None, cosa: str) -> float:
     return valore
 
 
-@router.post("/calcola", response_model=CalcoloOut)
-def calcola_peso(dati: CalcoloIn, db: Session = Depends(get_db), _u: TokenPayload = Depends(_richiede_accesso)):
+def risolvi_e_calcola(db: Session, dati: CalcoloIn) -> calcolo.RisultatoCalcolo:
+    """Risolve formato/materiali/costanti dal database e chiama
+    calcolo.calcola() — condivisa fra /calcola (il configuratore) e
+    /registra-calcolo (routers/storico.py): lo storico deve rifare
+    ESATTAMENTE lo stesso calcolo, mai una copia che rischia di
+    scollarsi da questa (Batti9292/Peso_Capsula_api#9: "il calcolo si
+    rifà da capo lato server... mai salvare i pesi mandati dal
+    browser")."""
     if dati.tipo not in TIPI_CAPSULA:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f'Tipo capsula sconosciuto: "{dati.tipo}".')
 
@@ -99,3 +105,8 @@ def calcola_peso(dati: CalcoloIn, db: Session = Depends(get_db), _u: TokenPayloa
         return calcolo.calcola(ingresso)
     except ValueError as errore:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(errore)) from None
+
+
+@router.post("/calcola", response_model=CalcoloOut)
+def calcola_peso(dati: CalcoloIn, db: Session = Depends(get_db), _u: TokenPayload = Depends(_richiede_accesso)):
+    return risolvi_e_calcola(db, dati)

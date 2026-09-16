@@ -6,6 +6,8 @@ all'API: "nessuna riga aggiungibile o togliibile" (Marco, 15 settembre
 
 from pydantic import BaseModel, ConfigDict
 
+from .fuso_orario import OrarioUTC
+
 
 class FormatoMandrinoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -181,3 +183,42 @@ class CalcoloOut(BaseModel):
     peso_colore_g: float
     peso_linguetta_g: float
     peso_capsula_g: float
+
+
+# ---- Storico (Batti9292/Peso_Capsula_api#9) ----
+
+
+class RegistraCalcoloIn(BaseModel):
+    """Le stesse scelte di CalcoloIn — MAI un peso: il router rifà il
+    calcolo da capo (routers/configuratore.py::risolvi_e_calcola) e
+    salva solo il risultato che esce da lì."""
+    tipo: str
+    formato_codice: str
+    altezza_capsula: float
+    materiale_parete_nome: str
+    materiale_disco_nome: str
+    colore_nome: str | None = None
+    linguetta: bool = False
+
+
+class CalcoloRegistratoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    creato_da_username: str
+    creato_il: OrarioUTC
+
+    tipo: str
+    formato_codice: str
+    altezza_capsula: float
+    materiale_parete_nome: str
+    materiale_disco_nome: str
+    colore_nome: str
+    linguetta: bool
+
+    peso_capsula_g: float
+    peso_foglia_parete_g: float
+    peso_disco_g: float
+    peso_colore_g: float
+    peso_linguetta_g: float
+    fascia_materiale_utilizzata_mm: float
+    sfrido_rifile_percento: float

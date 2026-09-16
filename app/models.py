@@ -14,7 +14,9 @@ posizione di riga come nel foglio originale, ma lo spirito è lo
 stesso: niente POST/DELETE su queste tabelle, solo PATCH sui valori,
 vedi routers/riferimenti.py)."""
 
-from sqlalchemy import Boolean, Float, Integer, String
+from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, DateTime, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -177,3 +179,43 @@ class CostantiDiscoTipo(Base):
     passo: Mapped[float | None] = mapped_column(Float, nullable=True)
     sfrido_rifile_percento: Mapped[float | None] = mapped_column(Float, nullable=True)
     sfrido_lunghezza_percento: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class CalcoloRegistrato(Base):
+    """Storico dei calcoli salvati esplicitamente (mai sui ricalcoli
+    live del Configuratore, solo quando l'utente clicca "Salva nello
+    storico") — Batti9292/Peso_Capsula_api#9, stesso modello di
+    lead_time_api::CalcoloRegistrato: CONDIVISO, chiunque abbia accesso
+    al modulo vede i calcoli di tutti (proposta di Marco nell'issue,
+    "il peso di una capsula non è un dato personale"), per questo porta
+    con sé chi lo ha salvato come username in chiaro.
+
+    Si salvano le SCELTE (nomi, non id: un materiale rinominato non deve
+    far sparire il perché di un calcolo vecchio) più il RISULTATO che il
+    Configuratore già mostra — mai i numeri di riferimento (diametri,
+    conicità, masse): chi non ha il permesso di dettaglio non deve
+    vederli riapparire dallo storico (routers/storico.py::registra_calcolo
+    li ricalcola sempre da capo, non salva mai quelli mandati dal
+    browser)."""
+
+    __tablename__ = "calcoli_registrati"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    creato_da_username: Mapped[str] = mapped_column(String(150), default="")
+    creato_il: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    tipo: Mapped[str] = mapped_column(String(20), default="")  # uno di TIPI_CAPSULA
+    formato_codice: Mapped[str] = mapped_column(String(50), default="")
+    altezza_capsula: Mapped[float] = mapped_column(Float, default=0.0)
+    materiale_parete_nome: Mapped[str] = mapped_column(String(100), default="")
+    materiale_disco_nome: Mapped[str] = mapped_column(String(50), default="")
+    colore_nome: Mapped[str] = mapped_column(String(100), default="")
+    linguetta: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    peso_capsula_g: Mapped[float] = mapped_column(Float, default=0.0)
+    peso_foglia_parete_g: Mapped[float] = mapped_column(Float, default=0.0)
+    peso_disco_g: Mapped[float] = mapped_column(Float, default=0.0)
+    peso_colore_g: Mapped[float] = mapped_column(Float, default=0.0)
+    peso_linguetta_g: Mapped[float] = mapped_column(Float, default=0.0)
+    fascia_materiale_utilizzata_mm: Mapped[float] = mapped_column(Float, default=0.0)
+    sfrido_rifile_percento: Mapped[float] = mapped_column(Float, default=0.0)

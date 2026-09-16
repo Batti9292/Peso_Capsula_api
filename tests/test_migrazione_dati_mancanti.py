@@ -85,8 +85,11 @@ def test_my_alu_esiste_ed_e_vuoto_di_default(db_migrata):
 
 
 def test_downgrade_toglie_esattamente_le_righe_aggiunte(db_migrata):
+    # Revisione ESPLICITA, non "-1": questa migrazione non è più
+    # necessariamente head (Batti9292/Peso_Capsula_api#9 ne ha aggiunta
+    # una sopra) — "-1" da head annullerebbe quella, non questa.
     cfg, db_path = db_migrata
-    command.downgrade(cfg, "-1")
+    command.downgrade(cfg, "5bbd4fe223c3")
     assert _conta(db_path, "materiali_parete") == ATTESO_MATERIALI_PARETE - 3
     assert _conta(db_path, "materiali_disco") == ATTESO_MATERIALI_DISCO - 7
     con = sqlite3.connect(db_path)
@@ -99,7 +102,7 @@ def test_downgrade_toglie_esattamente_le_righe_aggiunte(db_migrata):
 
 def test_upgrade_dopo_downgrade_torna_al_conteggio_giusto(db_migrata):
     cfg, db_path = db_migrata
-    command.downgrade(cfg, "-1")
+    command.downgrade(cfg, "5bbd4fe223c3")
     command.upgrade(cfg, "head")
     assert _conta(db_path, "materiali_parete") == ATTESO_MATERIALI_PARETE
     assert _conta(db_path, "materiali_disco") == ATTESO_MATERIALI_DISCO
