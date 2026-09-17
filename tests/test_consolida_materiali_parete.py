@@ -44,6 +44,19 @@ def test_un_nome_citato_ma_assente_viene_segnalato_non_cancellato(db):
     assert op[1] == []  # nessuna riga da cancellare, non esisteva
 
 
+def test_pet_confluisce_in_puraline_che_perde_il_suffisso(db):
+    db.add(MaterialeParete(nome="PET"))
+    db.add(MaterialeParete(nome="PURALINE - PET"))
+    db.commit()
+
+    operazioni, _ = prepara_operazioni(db)
+
+    op = next(o for o in operazioni if o[0].nome == "PURALINE - PET")
+    riga, cancella, nuovo_nome, nuovo_codice = op
+    assert "PET" in [r.nome for r in cancella]
+    assert nuovo_nome == "PURALINE"
+
+
 def test_therma_unisce_sei_righe_in_una(db):
     for nome in ["PVC", "PVC CineseTraspLucido", "THERMA - PVC", "PVC 75My colorato", "PVC 75My trasparente", "10TL075F", "10TS075F"]:
         db.add(MaterialeParete(nome=nome))

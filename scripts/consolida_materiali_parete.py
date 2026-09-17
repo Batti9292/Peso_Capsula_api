@@ -48,9 +48,11 @@ FUSIONI = [
 
     # --- Parte 2: PET ---
     # "PET IndianoTraspLucido" via del tutto (deve fare riferimento a
-    # Puraline) e tutto il trasparente (65My, 70My, 11TL070F) confluisce
-    # nello stesso Puraline generico.
-    ("PURALINE - PET", ["PET IndianoTraspLucido", "PET 65My TraspLucido", "PET 70My TraspLucido", "11TL070F"], None, "11PET"),
+    # Puraline), tutto il trasparente (65My, 70My, 11TL070F) confluisce
+    # nello stesso Puraline generico, e anche "PET" da solo confluisce
+    # qui — Marco, 17 settembre 2026: "pet deve finire dentro puraline
+    # pet diventando PURALINE" (il nome finale perde "- PET").
+    ("PURALINE - PET", ["PET", "PET IndianoTraspLucido", "PET 65My TraspLucido", "PET 70My TraspLucido", "11TL070F"], "PURALINE", "11PET"),
     # bianco lucido: due nomi diversi per la stessa cosa -> un nome nuovo.
     ("11BL065F", ["PET 70My BiancoLucido"], "PURALINE BIANCO LUCIDO", None),
 
