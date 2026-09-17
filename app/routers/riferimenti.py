@@ -15,6 +15,8 @@ Mai una POST/DELETE su queste tabelle: "nessuna riga aggiungibile o
 togliibile" (Marco) — le righe nascono da una migrazione/seed, qui si
 può solo aggiornare un valore già esistente."""
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -55,11 +57,17 @@ def _richiede_dettaglio(
     raise HTTPException(status.HTTP_403_FORBIDDEN, "Permessi insufficienti.")
 
 
-def _crud_sola_modifica(path: str, Model, SchemaOut, SchemaPatchIn):
+def _crud_sola_modifica(path: str, Model, SchemaOut, SchemaPatchIn, dopo_patch=None):
     """Fabbrica per le 7 tabelle: GET (elenco completo) + PATCH di una
     riga, entrambe riservate a `_richiede_dettaglio`. Stessa idea di
     cilindri_api/app/routers/riferimenti.py::_crud_riferimento, ma
-    senza POST/DELETE — qui le righe sono fisse."""
+    senza POST/DELETE — qui le righe sono fisse.
+
+    `dopo_patch(riga, campi_modificati)`, se passata, gira DOPO aver
+    scritto i campi inviati e PRIMA del commit — serve a
+    VarianteColore.aggiornato_il (Peso_Capsula_api#14): decide da sola
+    se quella PATCH specifica conta come "densità verificata", non lo
+    fa la factory generica per tutte e sette le tabelle."""
 
     @router.get(path, response_model=list[SchemaOut])
     def lista(db: Session = Depends(get_db), _u=Depends(_richiede_dettaglio)):
@@ -70,8 +78,11 @@ def _crud_sola_modifica(path: str, Model, SchemaOut, SchemaPatchIn):
         riga = db.query(Model).filter(Model.id == riga_id).first()
         if riga is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Riga non trovata.")
-        for campo, valore in dati.model_dump(exclude_unset=True).items():
+        campi_modificati = dati.model_dump(exclude_unset=True)
+        for campo, valore in campi_modificati.items():
             setattr(riga, campo, valore)
+        if dopo_patch is not None:
+            dopo_patch(riga, campi_modificati)
         db.commit()
         db.refresh(riga)
         return riga
@@ -79,10 +90,18 @@ def _crud_sola_modifica(path: str, Model, SchemaOut, SchemaPatchIn):
     return lista, aggiorna
 
 
+def _varianti_colore_dopo_patch(riga: VarianteColore, campi_modificati: dict) -> None:
+    # Solo la densità: rinominare o attivare/disattivare non e' una
+    # verifica del numero, e non deve muovere la data (vedi il
+    # commento sul modello e Peso_Capsula_api#14).
+    if "densita_g_m2" in campi_modificati:
+        riga.aggiornato_il = datetime.now(timezone.utc)
+
+
 _crud_sola_modifica("/formati-mandrino", FormatoMandrino, FormatoMandrinoOut, FormatoMandrinoPatchIn)
 _crud_sola_modifica("/materiali-parete", MaterialeParete, MaterialeParteOut, MaterialeParetePatchIn)
 _crud_sola_modifica("/materiali-disco", MaterialeDisco, MaterialeDiscoOut, MaterialeDiscoPatchIn)
-_crud_sola_modifica("/varianti-colore", VarianteColore, VarianteColoreOut, VarianteColorePatchIn)
+_crud_sola_modifica("/varianti-colore", VarianteColore, VarianteColoreOut, VarianteColorePatchIn, dopo_patch=_varianti_colore_dopo_patch)
 _crud_sola_modifica("/fasce-disponibili", FasciaDisponibile, FasciaDisponibileOut, FasciaDisponibilePatchIn)
 _crud_sola_modifica("/costanti-tipo-capsula", CostantiTipoCapsula, CostantiTipoCapsulaOut, CostantiTipoCapsulaPatchIn)
 _crud_sola_modifica("/costanti-disco-tipo", CostantiDiscoTipo, CostantiDiscoTipoOut, CostantiDiscoTipoPatchIn)

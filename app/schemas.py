@@ -80,6 +80,10 @@ class VarianteColoreOut(BaseModel):
     gruppo: str
     densita_g_m2: float | None
     attivo: bool
+    # Peso_Capsula_api#14 — None vuol dire "mai verificato", non si
+    # inventa una data: a schermo va mostrato come "mai aggiornato" o
+    # un trattino, mai una data odierna.
+    aggiornato_il: OrarioUTC | None
 
 
 class VarianteColorePatchIn(BaseModel):

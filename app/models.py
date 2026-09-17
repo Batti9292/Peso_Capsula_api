@@ -123,6 +123,13 @@ class VarianteColore(Base):
     gruppo: Mapped[str] = mapped_column(String(20), default="pvc")  # "pvc" o "alluminio"
     densita_g_m2: Mapped[float | None] = mapped_column(Float, nullable=True)
     attivo: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
+    # Peso_Capsula_api#14 — quando `densita_g_m2` e' stata verificata
+    # l'ultima volta ("questo numero e' ancora quello giusto?"). Si
+    # aggiorna SOLO quando cambia la densita' (vedi
+    # routers/riferimenti.py), mai al solo rinominare: altrimenti
+    # smetterebbe di voler dire "verificato" e diventerebbe "toccato a
+    # caso". Le righe esistenti restano NULL — nessuna data inventata.
+    aggiornato_il: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class CostantiTipoCapsula(Base):
