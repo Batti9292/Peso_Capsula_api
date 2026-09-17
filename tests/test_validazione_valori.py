@@ -163,6 +163,42 @@ def test_altezza_testa_ht_negativa_rifiutata(client, token_admin, db):
     assert r.status_code == 422
 
 
+# ---------------------------------------------------------------------
+# Peso_Capsula_api#11 — la tabella di #6 partiva da una configurazione
+# INVENTATA: tre vincoli hanno superato il bersaglio e rifiutavano
+# valori che nel foglio vero sono legittimi. Zero (e per un campo,
+# negativo) NON è un errore di battitura qui — è la lezione di #11:
+# un vincolo si scrive sui dati veri, non su quelli immaginati in
+# revisione. Numeri finti, come il resto del file (Marco, 15 settembre
+# 2026: "anche il foglio Excel è sensibile").
+# ---------------------------------------------------------------------
+
+def test_altezza_testa_ht_zero_e_accettata(client, token_admin, db):
+    """#11: zero è il valore vero per alcuni tipi di capsula — non è
+    più un errore di battitura da rifiutare. Da verificare al
+    contrario: rimettere gt=0, questa prova deve tornare a dare 422."""
+    riga = _crea_costanti_tipo(db)
+    r = client.patch(f"/costanti-tipo-capsula/{riga.id}", json={"altezza_testa_ht": 0.0}, headers=token_admin)
+    assert r.status_code == 200
+
+
+def test_rifila_s_zero_e_accettata(client, token_admin, db):
+    """#11: zero è il valore vero per alcuni tipi. Da verificare al
+    contrario: rimettere gt=0, questa prova deve tornare a dare 422."""
+    riga = _crea_costanti_tipo(db)
+    r = client.patch(f"/costanti-tipo-capsula/{riga.id}", json={"rifila_s": 0.0}, headers=token_admin)
+    assert r.status_code == 200
+
+
+def test_sormonto_disco_manuale_negativo_e_accettato(client, token_admin, db):
+    """#11: è un sormonto CON SEGNO — un valore negativo è quello vero
+    per alcuni tipi, non un errore. Da verificare al contrario:
+    rimettere gt=0, questa prova deve tornare a dare 422."""
+    riga = _crea_costanti_tipo(db)
+    r = client.patch(f"/costanti-tipo-capsula/{riga.id}", json={"sormonto_disco_manuale": -0.65}, headers=token_admin)
+    assert r.status_code == 200
+
+
 def test_peso_linguetta_zero_rifiutato(client, token_admin, db):
     riga = _crea_costanti_tipo(db)
     r = client.patch(f"/costanti-tipo-capsula/{riga.id}", json={"peso_linguetta_g": 0.0}, headers=token_admin)

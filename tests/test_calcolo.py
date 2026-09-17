@@ -252,6 +252,20 @@ def test_capsuloni_somma_colore_e_linguetta_invece_di_moltiplicarli():
 # della correzione, o arrivato per un'altra via.
 # ---------------------------------------------------------------------
 
+def test_altezza_testa_ht_zero_e_sormonto_disco_negativo_danno_un_peso_positivo():
+    """Peso_Capsula_api#11: la tabella di #6 era stata scritta su una
+    configurazione inventata — ht=0 e un sormonto disco negativo NON
+    sono errori di battitura per certi tipi, sono valori legittimi che
+    il calcolo deve gestire senza sollevare niente e senza produrre un
+    peso assurdo. Numeri finti, non quelli veri del foglio (Marco, 15
+    settembre: "anche il foglio Excel è sensibile")."""
+    r = calcola(_dati(
+        tipo="convex", altezza_testa_ht=0.0, rifila_s=0.0,
+        sormonto_disco_manuale=-0.65, sfrido_parete_convex_d=0.5,
+    ))
+    assert r.peso_capsula_g > 0
+
+
 def test_baseline_positiva_non_solleva_niente():
     """Da verificare al contrario: se una qualunque delle prove sotto
     smettesse di sollevare, sarebbe perché questa baseline (tutti i

@@ -132,11 +132,23 @@ class CostantiTipoCapsulaPatchIn(BaseModel):
     producono un peso capsula sbagliato senza nessun errore — misurato
     con `altezza_testa_ht`: -0,3679 g invece di 0,6964 g). Gli sfridi
     sono percentuali che possono legittimamente essere zero (nessuno
-    scarto), quindi solo `ge=0`, mai negativi."""
-    altezza_testa_ht: float | None = Field(None, gt=0)
+    scarto), quindi solo `ge=0`, mai negativi.
+
+    Peso_Capsula_api#11: quella tabella di #6 partiva da una
+    configurazione INVENTATA, non dal foglio Excel vero — tre vincoli
+    hanno superato il bersaglio e rifiutavano i valori VERI:
+    - `altezza_testa_ht`: 0 su TUTTI e cinque i tipi -> `ge=0`.
+    - `rifila_s`: 0 su Futura/PVC/PET -> `ge=0`.
+    - `sormonto_disco_manuale`: è un sormonto CON SEGNO (-0,65 su
+      Convex è il valore vero) -> nessun limite.
+    Il calcolo con questi valori funziona (Convex 1,6946 g, Futura
+    1,5481 g): non sono errori di battitura, sono la configurazione
+    vera. Resta la protezione che conta — il calcolo non restituisce
+    mai un peso ≤ 0 — che è in uscita, non su questi campi."""
+    altezza_testa_ht: float | None = Field(None, ge=0)
     sormonto_base_b: float | None = Field(None, gt=0)
-    rifila_s: float | None = Field(None, gt=0)
-    sormonto_disco_manuale: float | None = Field(None, gt=0)
+    rifila_s: float | None = Field(None, ge=0)
+    sormonto_disco_manuale: float | None = None
     sormonto_disco_costante: float | None = Field(None, gt=0)
     sfrido_parete_convex_d: float | None = Field(None, gt=0)
     sfrido_su_lunghezza_percento: float | None = Field(None, ge=0)
